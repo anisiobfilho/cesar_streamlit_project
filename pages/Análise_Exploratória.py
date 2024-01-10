@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
 
 st.set_page_config(
@@ -20,28 +21,94 @@ def carrega_base(path):
     data = pd.read_csv(path, sep=",", low_memory=True)
     return data
 
-data_dict = pd.DataFrame()
+tokyo2020 = carrega_base("data/tokyo_2020_swim.csv")
 
-data_dict['Variáveis'] = ['place', 'heat', 'lane', 'name', 'country', 'reaction time', 'dq', 'event', 'splits', 'relay_swimmer', 'relay_swimmer_X_gender']
-data_dict['Definição'] = [
-    "Ordem de finalização por bateria",
-    "There are three types of heats, which are 'heat', 'semi', and 'final'. Each race has multiple heats, denoted as 'heat_1', 'heat_2' etc. Some races have semis, again as 'semi_1', 'semi_2'. All races have only one final, called just 'final'. Athletes placing well enough in the heats advance to the semis (if held) and athletes placing high enough in the semis (or heats if there are no semis) advance to the final.",
-    "Existem 8 raias, 1-8",
-    "Nome do atleta como SOBRENOME Nome. Existem algumas exceções para atletas com vários nomes/sobrenomes ou letras maiúsculas não padrão em qualquer um dos nomes, por ex. 'McKEON Emma' para Emma McKeon. O valor será NA para revezamentos, consulte as colunas relay_swimmer.",
-    "Código do país de três letras.",
-    "O tempo decorrido entre o sinal de partida e a saída do atleta do bloco de partida, em segundos.",
-    "Um atleta foi desclassificado? Se 0, então não, a corrida foi disputada legalmente. Se 1 então sim, o atleta foi desclassificado por alguma infração de regra.",
-    "Nome do evento. String contendo gênero (masculino, feminino, misto), distância (em metros) e discípulo (nado livre, costas etc.).",
-    "Apresentado como split_50, split_100 etc. As divisões NÃO são cumulativas. Em vez disso, eles são aditivos. Portanto, o valor split_50 é o tempo, em segundos, que um atleta percorre os primeiros 50 metros. Então split_100 é o tempo, em segundos, para o atleta percorrer os próximos 50 metros. Isso significa que no momento do atleta percorrer 100 metros é split_50 + split_100. Para eventos menores que uma determinada divisão, o valor split_X será NA.",
-    "Apresentado como relay_swimmer_1 etc. O nome de cada nadador em um revezamento por ordem de competição. Cada revezamento conta com quatro nadadores. São usadas convenções de nomenclatura da coluna de nome.",
-    "Gênero do nadador de revezamento por posição para uso em provas de revezamento misto. Ou 'f' para mulher ou 'm' para homem. Se o evento não for um revezamento misto esse valor será NA.",
-]
-st.subheader("Dicionário de Dados")
-st.dataframe(data_dict, use_container_width=True)
+st.subheader("Base de Dados Pré-processada")
 
-st.subheader("Base de dados")
-df = carrega_base("data/tokyo_2020_swim.csv")
-st.dataframe(df, use_container_width=True)
+tokyo2020 = tokyo2020.dropna(subset=['place', 'lane'])
+tokyo2020['place'] = tokyo2020['place'].astype(int)
+tokyo2020['lane'] = tokyo2020['lane'].astype(int)
+replace_dict = {'USA - United States of America': 'USA', 'ITA - Italy': 'ITA', 'AUS - Australia': 'AUS',
+                'CAN - Canada':'CAN', 'HUN - Hungary': 'HUN', 'FRA - France':'FRA', 'ROC - ROC':'ROC', 'BRA - Brazil':'BRA', 'SRB - Serbia':'SRB',
+                'POL - Poland':'POL', 'JPN - Japan':'JPN', 'GRE - Greece':'GRE', 'GBR - Great Britain':'GBR', 'NED - Netherlands':'NED',
+                'SUI - Switzerland':'SUI', 'GER - Germany':'GER', "CHN - People's Republic of China":'CHN', 'BLR - Belarus':'BLR','ISR - Israel':'ISR',
+                'KOR - Republic of Korea':'KOR', 'IRL - Ireland':'IRL','SWE - Sweden':'SWE', 'DEN - Denmark':'DEN', 'HKG - Hong Kong, China':'HKG','CZE - Czech Republic':'CZE',
+                'RSA - South Africa':'RSA', 'ESP - Spain':'ESP','TUR - Turkey':'TUR', 'NZL - New Zealand':'NZL' }
+tokyo2020['team'] = tokyo2020['team'].replace(replace_dict)
+tokyo2020 = tokyo2020[~tokyo2020['team'].isin(['0.65', '0.66'])]
+tokyo2020.drop(['relay_swimmer_1', 'relay_swimmer_2', 'relay_swimmer_3','relay_swimmer_4', 'relay_swimmer_1_gender', 'relay_swimmer_2_gender', 'relay_swimmer_3_gender', 'relay_swimmer_4_gender'], axis=1, inplace=True)
+tokyo2020 = tokyo2020[tokyo2020['dq'] == 0]
+tokyo2020.drop(['dq'], axis=1, inplace=True)
+
+st.dataframe(tokyo2020, use_container_width=True)
 
 
+st.subheader("Tempo de reação: Eliminatória Women 50 Freestyle")
 
+tempoReacao = tokyo2020[(tokyo2020['event']== "women 50m freestyle") & (tokyo2020.heat.str.startswith('heat_'))]
+fig1 = px.scatter(tempoReacao, 
+                  x="reaction_time", 
+                  y="time", 
+                  trendline="ols", 
+                  title="Tempo de reação nas eliminatórias de 50m livre para mulheres")
+st.plotly_chart(fig1, use_container_width=True)
+
+
+st.subheader("Finalistas Men 400m Individual Medley")
+
+medley = pd.DataFrame(tokyo2020[(tokyo2020['heat']=='final') & (tokyo2020['event']=='men 400m individual medley')])
+data = {
+    'Atleta': medley[('place')],
+    'split_50': medley['split_50'],
+    'split_100': medley['split_100'],
+    'split_150': medley['split_150'],
+    'split_200': medley['split_200'],
+    'split_250': medley['split_250'],
+    'split_300': medley['split_300'],
+    'split_350': medley['split_350'],
+    'split_400': medley['split_400'],
+}
+dfMedley2 = pd.DataFrame(data)
+fig2 = px.parallel_coordinates(dfMedley2, 
+                               color="Atleta", 
+                               dimensions=['Atleta','split_50', 'split_100', 'split_150', 'split_200', 'split_250', 'split_300', 'split_350', 'split_400'], 
+                               color_continuous_scale=px.colors.sequential.Turbo, 
+                               color_continuous_midpoint=4)
+st.plotly_chart(fig2, use_container_width=True)
+
+st.subheader("Número e tipo de medalhas ganhadas e agrupadas por país")
+
+final_df = tokyo2020[tokyo2020['heat'] == 'final']
+first_place_df = final_df[final_df['place'] == 1]
+second_place_df = final_df[final_df['place'] == 2]
+third_place_df = final_df[final_df['place'] == 3]
+teamGoldMedal = first_place_df.groupby('team').size().sort_values(ascending=False)
+teamSilverMedal = second_place_df.groupby('team').size().sort_values(ascending=False)
+teamBronzeMedal = third_place_df.groupby('team').size().sort_values(ascending=False)
+teams_gold = np.array(first_place_df['team'].values)
+teams_silver = np.array(second_place_df['team'].values)
+teams_bronze = np.array(third_place_df['team'].values)
+concat_teams = np.concatenate((teams_gold, teams_silver, teams_bronze))
+unique_teams = np.unique(concat_teams)
+
+medal_counts = pd.DataFrame({
+    'Team': unique_teams,
+    'Gold': teamGoldMedal.reindex(unique_teams).values,
+    'Silver': teamSilverMedal.reindex(unique_teams).values,
+    'Bronze': teamBronzeMedal.reindex(unique_teams).values
+})
+medal_counts['Total'] = medal_counts.sum(axis=1)
+medal_counts = medal_counts.sort_values(by=['Total','Gold','Silver','Bronze'], ascending=False)
+medal_counts = medal_counts.drop('Total', axis=1)
+df_melted = pd.melt(medal_counts, id_vars=['Team'], var_name='Medal', value_name='Count')
+fig3 = px.bar(df_melted, x='Team', y='Count', color='Medal', color_discrete_sequence=['gold','silver', '#cd7f32'])
+fig3.update_layout(
+    title='Total Medals by Country',
+    xaxis_title='Country',
+    yaxis_title='Number of Medals',
+    legend_title='Medal',
+    legend=dict(title='Medal', orientation='h', y=1.1, x=0.5),
+    barmode='group',
+    showlegend=True
+)
+st.plotly_chart(fig3, use_container_width=True)

@@ -21,4 +21,4 @@ st.write("Resultados completos das competições de natação (masculino e femin
 st.write("Kaggle: https://www.kaggle.com/datasets/gregpilgrim/tokyo-2020-swimming-results")
 
 st.subheader("Projeto")
-st.write("GitHub: https://github.com/anisiobfilho/cesar-streamlit-project")
+st.write("GitHub: https://github.com/anisiobfilho/cesar_streamlit_project")

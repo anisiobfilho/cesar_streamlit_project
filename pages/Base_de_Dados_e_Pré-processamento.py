@@ -59,17 +59,17 @@ st.write("Apenas atletas desqualificados não foram analisados. Logo utilizamos 
 
 st.write("A base limpa e pré-processada ficou da seguinte forma:")
 
-tokyo2020 = tokyo2020.dropna(subset=['place', 'lane'])
-tokyo2020['place'] = tokyo2020['place'].astype(int)
-tokyo2020['lane'] = tokyo2020['lane'].astype(int)
+tokyo2020.dropna(subset=['place', 'lane'], inplace=True)
+tokyo2020.loc[:, 'place'] = tokyo2020['place'].astype(int)
+tokyo2020.loc[:, 'lane'] = tokyo2020['lane'].astype(int)
 replace_dict = {'USA - United States of America': 'USA', 'ITA - Italy': 'ITA', 'AUS - Australia': 'AUS',
                 'CAN - Canada':'CAN', 'HUN - Hungary': 'HUN', 'FRA - France':'FRA', 'ROC - ROC':'ROC', 'BRA - Brazil':'BRA', 'SRB - Serbia':'SRB',
                 'POL - Poland':'POL', 'JPN - Japan':'JPN', 'GRE - Greece':'GRE', 'GBR - Great Britain':'GBR', 'NED - Netherlands':'NED',
                 'SUI - Switzerland':'SUI', 'GER - Germany':'GER', "CHN - People's Republic of China":'CHN', 'BLR - Belarus':'BLR','ISR - Israel':'ISR',
                 'KOR - Republic of Korea':'KOR', 'IRL - Ireland':'IRL','SWE - Sweden':'SWE', 'DEN - Denmark':'DEN', 'HKG - Hong Kong, China':'HKG','CZE - Czech Republic':'CZE',
                 'RSA - South Africa':'RSA', 'ESP - Spain':'ESP','TUR - Turkey':'TUR', 'NZL - New Zealand':'NZL' }
-tokyo2020['team'] = tokyo2020['team'].replace(replace_dict)
-tokyo2020 = tokyo2020[~tokyo2020['team'].isin(['0.65', '0.66'])]
+tokyo2020.loc[:, 'team'] = tokyo2020['team'].replace(replace_dict)
+tokyo2020 = tokyo2020[~tokyo2020['team'].isin(['0.65', '0.66'])].copy()
 tokyo2020.drop(['relay_swimmer_1', 'relay_swimmer_2', 'relay_swimmer_3','relay_swimmer_4', 'relay_swimmer_1_gender', 'relay_swimmer_2_gender', 'relay_swimmer_3_gender', 'relay_swimmer_4_gender'], axis=1, inplace=True)
 tokyo2020 = tokyo2020[tokyo2020['dq'] == 0]
 tokyo2020.drop(['dq'], axis=1, inplace=True)

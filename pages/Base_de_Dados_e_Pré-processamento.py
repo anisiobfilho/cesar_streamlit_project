@@ -9,7 +9,7 @@ st.set_page_config(
      initial_sidebar_state="expanded",
      menu_items={}
  )
-st.sidebar.image("https://www.cbc.ca/cbckids/olympics/tokyo2020/content/Olympics_Silver_Miraitowa_Swimming.png")
+st.sidebar.image("img/mascot.png")
 
 st.cache_resource.clear()
 

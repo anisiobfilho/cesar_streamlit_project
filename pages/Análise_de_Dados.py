@@ -43,7 +43,7 @@ tokyo2020.drop(['dq'], axis=1, inplace=True)
 st.dataframe(tokyo2020, use_container_width=True)
 
 st.subheader("Tempo de reação")
-col1, col2 = st.columns([1,2.5])
+col1, col2 = st.columns([1,3])
 with col1:
     event_selected = st.selectbox('Selecione o evento que você gostaria de analisar?', (tokyo2020.event.unique()), key=1)
 with col2:
@@ -55,35 +55,36 @@ with col2:
                     title=f"Tempo de reação no evento: {event_selected}")
     st.plotly_chart(fig1, use_container_width=True)
 
-st.subheader("Enventos finais")
-col3, col4 = st.columns([1,2.5])
-with col3:
-    event_selected2 = st.selectbox('Selecione o evento que você gostaria de analisar?', (tokyo2020.event.unique()), key=2)
-with col4:
-    medley = pd.DataFrame(tokyo2020[(tokyo2020['heat']=='final') & (tokyo2020['event']== event_selected2)])
-    data = {
-        'Atleta': medley[('place')],
-        'split_50': medley['split_50'],
-        'split_100': medley['split_100'],
-        'split_150': medley['split_150'],
+st.subheader("Eventos finais")
+col3, col4 = st.columns([1, 3])
 
-        'split_200': medley['split_200'],
-        'split_250': medley['split_250'],
-        'split_300': medley['split_300'],
-        'split_350': medley['split_350'],
-        'split_400': medley['split_400'],
-    }
+with col3:
+    event_selected2 = st.selectbox('Selecione o evento que você gostaria de analisar?', list(tokyo2020['event'].unique()), key=2)
+
+with col4:
+    medley = pd.DataFrame(tokyo2020[(tokyo2020['heat'] == 'final') & (tokyo2020['event'] == event_selected2)])
+    split_columns = [col for col in medley.columns if col.startswith('split_')]
+
+    # Removendo colunas que têm todos os valores nulos
+    medley = medley.dropna(subset=split_columns, how='all')
+
+    # Criando dinamicamente as colunas para os splits disponíveis no evento
+    data = {'Atleta': medley['place']}
+    for split_col in split_columns:
+        data[split_col] = medley[split_col]
+
     dfMedley2 = pd.DataFrame(data)
-    fig2 = px.parallel_coordinates(dfMedley2, 
-                                color="Atleta", 
-                                dimensions=dfMedley2.columns, 
-                                color_continuous_scale=px.colors.sequential.Turbo, 
-                                color_continuous_midpoint=4,
-                                title=f"Evento final: {event_selected}")
+    dfMedley2.dropna(how='all', axis=1, inplace=True)
+    fig2 = px.parallel_coordinates(dfMedley2,
+                                   color="Atleta",
+                                   dimensions=dfMedley2.columns,
+                                   color_continuous_scale=px.colors.sequential.Turbo,
+                                   color_continuous_midpoint=4,
+                                   title=f"Evento final: {event_selected2}")
     st.plotly_chart(fig2, use_container_width=True)
 
 st.subheader("Resultado final das medalhas conquistadas por país")
-col5, col6 = st.columns([1, 2.5])
+col5, col6 = st.columns([1, 3])
 with col5:
     final_df = tokyo2020[tokyo2020['heat'] == 'final']
     first_place_df = final_df[final_df['place'] == 1]

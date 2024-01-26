@@ -85,54 +85,58 @@ with col4:
     st.plotly_chart(fig2, use_container_width=True)
 
 st.subheader("Resultado final das medalhas conquistadas por país")
-col5, col6 = st.columns([1, 3])
-with col5:
-    final_df = tokyo2020[tokyo2020['heat'] == 'final']
-    first_place_df = final_df[final_df['place'] == 1]
-    second_place_df = final_df[final_df['place'] == 2]
-    third_place_df = final_df[final_df['place'] == 3]
-    teamGoldMedal = first_place_df.groupby('team').size().sort_values(ascending=False)
-    teamSilverMedal = second_place_df.groupby('team').size().sort_values(ascending=False)
-    teamBronzeMedal = third_place_df.groupby('team').size().sort_values(ascending=False)
-    teams_gold = np.array(first_place_df['team'].values)
-    teams_silver = np.array(second_place_df['team'].values)
-    teams_bronze = np.array(third_place_df['team'].values)
-    concat_teams = np.concatenate((teams_gold, teams_silver, teams_bronze))
-    unique_teams = np.unique(concat_teams)
+medals_array = ["Total", "Gold", "Silver", "Bronze"]
 
-    medal_counts = pd.DataFrame({
-        'Time': unique_teams,
-        'Ouro': teamGoldMedal.reindex(unique_teams).values,
-        'Prata': teamSilverMedal.reindex(unique_teams).values,
-        'Bronze': teamBronzeMedal.reindex(unique_teams).values
-    })
+medal = st.radio(
+    "Choose a medal to display in the chart",
+    medals_array,
+    horizontal=True,
+)
 
-    show_gold = st.toggle("Mostrar Ouro", True)
-    show_silver = st.toggle("Mostrar Prata", True)
-    show_bronze = st.toggle("Mostrar Bronze", True)
+final_df = tokyo2020[tokyo2020['heat'] == 'final']
+first_place_df = final_df[final_df['place'] == 1]
+second_place_df = final_df[final_df['place'] == 2]
+third_place_df = final_df[final_df['place'] == 3]
+teamGoldMedal = first_place_df.groupby('team').size().sort_values(ascending=False)
+teamSilverMedal = second_place_df.groupby('team').size().sort_values(ascending=False)
+teamBronzeMedal = third_place_df.groupby('team').size().sort_values(ascending=False)
+teams_gold = np.array(first_place_df['team'].values)
+teams_silver = np.array(second_place_df['team'].values)
+teams_bronze = np.array(third_place_df['team'].values)
+concat_teams = np.concatenate((teams_gold, teams_silver, teams_bronze))
+unique_teams = np.unique(concat_teams)
 
+medal_counts = pd.DataFrame({
+    'Team': unique_teams,
+    'Gold': teamGoldMedal.reindex(unique_teams).values,
+    'Silver': teamSilverMedal.reindex(unique_teams).values,
+    'Bronze': teamBronzeMedal.reindex(unique_teams).values
+})
+medal_counts['Total'] = medal_counts.sum(numeric_only= True, axis=1)
 
-    filtered_df = medal_counts[['Time']]
+color_sequence = []
+if medal == 'Total':
+    medal_counts = medal_counts.sort_values(by=medals_array, ascending=False)
+    medal_counts.drop('Total', axis=1, inplace=True)
+    color_sequence = ['Gold','Silver', '#cd7f32']
+else:
+    medals_filtered = [x for x in medals_array if (x != medal or x == 'Total')]
+    medal_counts.drop(medals_filtered, axis=1, inplace=True)
+    medal_counts = medal_counts.sort_values(by=medal, ascending=False)
+    if medal == 'Bronze':
+        color_sequence=['#cd7f32']
+    else:
+        color_sequence=[medal]
 
-    if show_gold:
-        filtered_df['Ouro'] = medal_counts['Ouro']
-    if show_silver:
-        filtered_df['Prata'] = medal_counts['Prata']
-    if show_bronze:
-        filtered_df['Bronze'] = medal_counts['Bronze']
-
-with col6:
-    df_melted_filtered = pd.melt(filtered_df, id_vars=['Time'], var_name='Medal', value_name='Count')
-    fig3 = px.bar(df_melted_filtered, x='Time', y='Count', color='Medal', color_discrete_sequence=['gold', 'silver', '#cd7f32'])
-    fig3.update_layout(
-        title='Total de Medalhas por País',
-        xaxis_title='País',
-        yaxis_title='Número de medalhas',
-        legend_title='Medal',
-        legend=dict(title='Medalha', orientation='h', y=1.1, x=0.5),
-        barmode='group',
-        showlegend=True
-    )
-
-    # Exibindo o gráfico com o Streamlit
-    st.plotly_chart(fig3, use_container_width=True)
+df_melted = pd.melt(medal_counts, id_vars=['Team'], var_name='Medal', value_name='Count')
+fig3 = px.bar(df_melted, x='Team', y='Count', color='Medal', color_discrete_sequence=color_sequence)
+fig3.update_layout(
+    title=medal+' Medals by Country',
+    xaxis_title='Country',
+    yaxis_title='Number of Medals',
+    legend_title='Medal',
+    legend=dict(title='Medal', orientation='h', y=1.1, x=0.5),
+    barmode='group',
+    showlegend=True
+)
+st.plotly_chart(fig3, use_container_width=True)

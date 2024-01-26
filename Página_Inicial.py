@@ -8,7 +8,7 @@ st.set_page_config(
      initial_sidebar_state="expanded",
      menu_items={}
  )
-
+st.sidebar.image("https://www.cbc.ca/cbckids/olympics/tokyo2020/content/Olympics_Silver_Miraitowa_Swimming.png")
 
 st.header("Resultados de Natação em Tóquio 2020")
 st.image("https://news.cgtn.com/news/2021-08-01/McKeon-Dressel-shine-at-Tokyo-Olympics-swimming-events-12mOEAiUkIE/img/2a0c7b6dd09d4a1399b06643328818bd/2a0c7b6dd09d4a1399b06643328818bd-1920.png")

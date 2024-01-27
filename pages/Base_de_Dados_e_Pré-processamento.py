@@ -38,7 +38,7 @@ data_dict['Definição'] = [
     "Gênero do nadador de revezamento por posição para uso em provas de revezamento misto. Ou 'f' para mulher ou 'm' para homem. Se o evento não for um revezamento misto esse valor será NA.",
 ]
 st.subheader("Dicionário de Dados")
-st.dataframe(data_dict, use_container_width=True)
+st.dataframe(data_dict, hide_index=True, use_container_width=True)
 
 st.subheader("Base de dados")
 tokyo2020 = carrega_base("data/tokyo_2020_swim.csv")

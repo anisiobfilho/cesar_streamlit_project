@@ -82,6 +82,7 @@ with col4:
                                    color_continuous_scale=px.colors.sequential.Turbo,
                                    color_continuous_midpoint=4,
                                    title=f"Evento final: {event_selected2}")
+    fig2.update_layout(autosize=True)
     st.plotly_chart(fig2, use_container_width=True)
 
 st.subheader("Resultado final das medalhas conquistadas por país")
@@ -140,3 +141,5 @@ fig3.update_layout(
     showlegend=True
 )
 st.plotly_chart(fig3, use_container_width=True)
+
+
